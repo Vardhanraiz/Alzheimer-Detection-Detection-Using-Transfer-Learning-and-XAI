@@ -35,7 +35,7 @@ uploaded_file = st.file_uploader(
 # Image preprocessing
 # =========================
 def preprocess_image(img):
-    img = img.convert("RGB")            # force RGB (MRI may be grayscale)
+    img = img.convert("RGB")
     img = img.resize((224, 224))
     img_array = np.array(img) / 255.0
     img_array = np.expand_dims(img_array, axis=0)
@@ -79,7 +79,6 @@ if uploaded_file is not None:
 
     processed_img = preprocess_image(img)
 
-    # Prediction
     preds = model.predict(processed_img)
     predicted_class = class_names[np.argmax(preds)]
     confidence = float(np.max(preds))
@@ -88,8 +87,18 @@ if uploaded_file is not None:
     st.write("**Alzheimer Stage:**", predicted_class)
     st.write("**Confidence Score:**", round(confidence, 2))
 
-    # Grad-CAM
     heatmap = make_gradcam_heatmap(processed_img, model)
 
     heatmap = cv2.resize(heatmap, (224, 224))
-    heatmap = np.uint8(255 * heat*
+    heatmap = np.uint8(255 * heatmap)
+    heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
+    heatmap = cv2.cvtColor(heatmap, cv2.COLOR_BGR2RGB)
+
+    img_rgb = img.convert("RGB").resize((224, 224))
+    img_array = np.array(img_rgb)
+
+    superimposed_img = heatmap * 0.4 + img_array
+    superimposed_img = np.uint8(superimposed_img / np.max(superimposed_img) * 255)
+
+    st.subheader("Grad-CAM Visualization")
+    st.image(superimposed_img, use_column_width=True)
