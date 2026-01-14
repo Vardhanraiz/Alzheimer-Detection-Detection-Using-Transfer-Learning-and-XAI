@@ -54,9 +54,7 @@ def make_gradcam_heatmap(img_array, model, last_conv_layer_name="top_conv"):
 
     with tf.GradientTape() as tape:
         conv_outputs, predictions = grad_model(img_array)
-        pred_index = tf.argmax(predictions[0])
-        pred_index = int(pred_index.numpy())   # FIX
-        class_channel = predictions[:, pred_index]
+        class_channel = tf.reduce_max(predictions, axis=1)  # ✅ SAFE FIX
 
     grads = tape.gradient(class_channel, conv_outputs)
     pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
@@ -68,7 +66,6 @@ def make_gradcam_heatmap(img_array, model, last_conv_layer_name="top_conv"):
     heatmap /= tf.reduce_max(heatmap) + 1e-8
 
     return heatmap.numpy()
-
 # =========================
 # Main logic
 # =========================
@@ -103,4 +100,5 @@ if uploaded_file is not None:
 
     st.subheader("Grad-CAM Visualization")
     st.image(superimposed_img, use_column_width=True)
+
 
