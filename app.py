@@ -3,6 +3,9 @@ import tensorflow as tf
 import numpy as np
 import cv2
 from PIL import Image
+from lime import lime_image
+from skimage.segmentation import mark_boundaries
+
 
 # =========================
 # Load trained model
@@ -42,6 +45,11 @@ def preprocess_image(img):
     return img_array
 
 # =========================
+def lime_predict(images):
+    images = np.array(images)
+    images = images / 255.0
+    return model.predict(images)
+
 # Grad-CAM function
 # =========================
 def make_gradcam_heatmap(img_array, model, last_conv_layer_name="top_conv"):
@@ -67,6 +75,30 @@ def make_gradcam_heatmap(img_array, model, last_conv_layer_name="top_conv"):
 
     return heatmap.numpy()
 # =========================
+def generate_lime_explanation(img):
+    explainer = lime_image.LimeImageExplainer()
+
+    img_rgb = img.convert("RGB").resize((224, 224))
+    img_array = np.array(img_rgb)
+
+    explanation = explainer.explain_instance(
+        img_array,
+        lime_predict,
+        top_labels=1,
+        hide_color=0,
+        num_samples=1000
+    )
+
+    temp, mask = explanation.get_image_and_mask(
+        explanation.top_labels[0],
+        positive_only=True,
+        num_features=5,
+        hide_rest=False
+    )
+
+    lime_image_result = mark_boundaries(temp / 255.0, mask)
+    return lime_image_result
+
 # Main logic
 # =========================
 if uploaded_file is not None:
@@ -100,5 +132,10 @@ if uploaded_file is not None:
 
     st.subheader("Grad-CAM Visualization")
     st.image(superimposed_img, use_column_width=True)
+    st.subheader("LIME Explanation")
+lime_result = generate_lime_explanation(img)
+st.image(lime_result, use_column_width=True)
+
+
 
 
