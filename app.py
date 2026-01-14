@@ -78,7 +78,10 @@ def lime_predict(images):
     return model.predict(images)
 
 def generate_lime_explanation(img):
-    explainer = lime_image.LimeImageExplainer()
+    # Create explainer with more superpixels (Improvement 2)
+    explainer = lime_image.LimeImageExplainer(
+        segmentation_fn=lambda x: slic(x, n_segments=150, compactness=10)
+    )
 
     img_rgb = img.convert("RGB").resize((224, 224))
     img_array = np.array(img_rgb)
@@ -88,19 +91,19 @@ def generate_lime_explanation(img):
         lime_predict,
         top_labels=1,
         hide_color=0,
-        num_samples=500
+        num_samples=300   # balanced speed + quality
     )
 
+    # Show both positive and negative regions (Improvement 1)
     temp, mask = explanation.get_image_and_mask(
         explanation.top_labels[0],
-        positive_only=True,
-        num_features=5,
+        positive_only=False,   # 🔥 red + green regions
+        num_features=8,
         hide_rest=False
     )
 
     lime_result = mark_boundaries(temp / 255.0, mask)
     return lime_result
-
 # =========================
 # Main logic
 # =========================
@@ -145,6 +148,7 @@ if uploaded_file is not None:
     st.subheader("LIME Explanation")
     lime_result = generate_lime_explanation(img)
     st.image(lime_result, use_column_width=True)
+
 
 
 
