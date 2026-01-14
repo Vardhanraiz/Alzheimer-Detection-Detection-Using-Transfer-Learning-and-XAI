@@ -5,7 +5,7 @@ import cv2
 from PIL import Image
 
 from lime import lime_image
-from skimage.segmentation import mark_boundaries, slic
+from skimage.segmentation import mark_boundaries
 
 # =========================
 # Load trained model
@@ -78,14 +78,7 @@ def lime_predict(images):
     return model.predict(images)
 
 def generate_lime_explanation(img):
-    explainer = lime_image.LimeImageExplainer(
-        segmentation_fn=lambda x: slic(
-            x,
-            n_segments=150,
-            compactness=10,
-            channel_axis=-1
-        )
-    )
+    explainer = lime_image.LimeImageExplainer()
 
     img_rgb = img.convert("RGB").resize((224, 224))
     img_array = np.array(img_rgb)
@@ -95,13 +88,13 @@ def generate_lime_explanation(img):
         lime_predict,
         top_labels=1,
         hide_color=0,
-        num_samples=300
+        num_samples=500
     )
 
     temp, mask = explanation.get_image_and_mask(
         explanation.top_labels[0],
-        positive_only=False,
-        num_features=8,
+        positive_only=True,
+        num_features=5,
         hide_rest=False
     )
 
@@ -126,10 +119,10 @@ if uploaded_file is not None:
     st.subheader("Prediction Result")
     st.write("**Alzheimer Stage:**", predicted_class)
     st.write("**Confidence Score:**", round(confidence, 2))
-
     st.write("### Class Probabilities")
-    for i, cls in enumerate(class_names):
-        st.write(f"{cls}: {preds[0][i]:.2f}")
+for i, cls in enumerate(class_names):
+    st.write(f"{cls}: {preds[0][i]:.2f}")
+
 
     # -------- Grad-CAM --------
     st.subheader("Grad-CAM Visualization")
