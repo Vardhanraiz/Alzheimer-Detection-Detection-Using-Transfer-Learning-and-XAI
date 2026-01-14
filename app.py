@@ -5,9 +5,7 @@ import cv2
 from PIL import Image
 
 from lime import lime_image
-from skimage.segmentation import mark_boundaries
-from skimage.segmentation import slic
-
+from skimage.segmentation import mark_boundaries, slic
 
 # =========================
 # Load trained model
@@ -85,7 +83,7 @@ def generate_lime_explanation(img):
             x,
             n_segments=150,
             compactness=10,
-            channel_axis=-1   # 🔥 CRITICAL FIX
+            channel_axis=-1
         )
     )
 
@@ -109,6 +107,7 @@ def generate_lime_explanation(img):
 
     lime_result = mark_boundaries(temp / 255.0, mask)
     return lime_result
+
 # =========================
 # Main logic
 # =========================
@@ -127,10 +126,10 @@ if uploaded_file is not None:
     st.subheader("Prediction Result")
     st.write("**Alzheimer Stage:**", predicted_class)
     st.write("**Confidence Score:**", round(confidence, 2))
+
     st.write("### Class Probabilities")
     for i, cls in enumerate(class_names):
         st.write(f"{cls}: {preds[0][i]:.2f}")
-
 
     # -------- Grad-CAM --------
     st.subheader("Grad-CAM Visualization")
@@ -153,10 +152,3 @@ if uploaded_file is not None:
     st.subheader("LIME Explanation")
     lime_result = generate_lime_explanation(img)
     st.image(lime_result, use_column_width=True)
-    
-
-
-
-
-
-
