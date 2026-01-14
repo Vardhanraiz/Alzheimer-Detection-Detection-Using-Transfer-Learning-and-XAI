@@ -3,3 +3,6 @@ tensorflow
 numpy
 opencv-python-headless
 pillow
+lime
+scikit-image
+
