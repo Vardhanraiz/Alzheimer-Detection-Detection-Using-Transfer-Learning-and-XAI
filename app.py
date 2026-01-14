@@ -45,7 +45,7 @@ def preprocess_image(img):
     return img_array
 
 # =========================
-# Grad-CAM (Cloud-safe)
+# Grad-CAM (SAFE)
 # =========================
 def make_gradcam_heatmap(img_array, model, last_conv_layer_name="top_conv"):
     last_conv_layer = model.get_layer(last_conv_layer_name)
@@ -71,7 +71,7 @@ def make_gradcam_heatmap(img_array, model, last_conv_layer_name="top_conv"):
     return heatmap.numpy()
 
 # =========================
-# LIME helper functions
+# LIME (SIMPLE & STABLE)
 # =========================
 def lime_predict(images):
     images = np.array(images) / 255.0
@@ -88,12 +88,12 @@ def generate_lime_explanation(img):
         lime_predict,
         top_labels=1,
         hide_color=0,
-        num_samples=500
+        num_samples=300
     )
 
     temp, mask = explanation.get_image_and_mask(
         explanation.top_labels[0],
-        positive_only=True,
+        positive_only=True,   # ✔ yellow explanation (stable)
         num_features=5,
         hide_rest=False
     )
@@ -119,10 +119,10 @@ if uploaded_file is not None:
     st.subheader("Prediction Result")
     st.write("**Alzheimer Stage:**", predicted_class)
     st.write("**Confidence Score:**", round(confidence, 2))
+
     st.write("### Class Probabilities")
     for i, cls in enumerate(class_names):
-    st.write(f"{cls}: {preds[0][i]:.2f}")
-
+        st.write(f"{cls}: {preds[0][i]:.2f}")
 
     # -------- Grad-CAM --------
     st.subheader("Grad-CAM Visualization")
@@ -145,4 +145,3 @@ if uploaded_file is not None:
     st.subheader("LIME Explanation")
     lime_result = generate_lime_explanation(img)
     st.image(lime_result, use_column_width=True)
-
