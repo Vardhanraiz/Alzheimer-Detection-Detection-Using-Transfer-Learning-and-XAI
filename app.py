@@ -6,6 +6,8 @@ from PIL import Image
 
 from lime import lime_image
 from skimage.segmentation import mark_boundaries
+from skimage.segmentation import slic
+
 
 # =========================
 # Load trained model
@@ -78,9 +80,13 @@ def lime_predict(images):
     return model.predict(images)
 
 def generate_lime_explanation(img):
-    # Create explainer with more superpixels (Improvement 2)
     explainer = lime_image.LimeImageExplainer(
-        segmentation_fn=lambda x: slic(x, n_segments=150, compactness=10)
+        segmentation_fn=lambda x: slic(
+            x,
+            n_segments=150,
+            compactness=10,
+            channel_axis=-1   # 🔥 CRITICAL FIX
+        )
     )
 
     img_rgb = img.convert("RGB").resize((224, 224))
@@ -91,13 +97,12 @@ def generate_lime_explanation(img):
         lime_predict,
         top_labels=1,
         hide_color=0,
-        num_samples=300   # balanced speed + quality
+        num_samples=300
     )
 
-    # Show both positive and negative regions (Improvement 1)
     temp, mask = explanation.get_image_and_mask(
         explanation.top_labels[0],
-        positive_only=False,   # 🔥 red + green regions
+        positive_only=False,
         num_features=8,
         hide_rest=False
     )
@@ -149,6 +154,7 @@ if uploaded_file is not None:
     lime_result = generate_lime_explanation(img)
     st.image(lime_result, use_column_width=True)
     
+
 
 
 
