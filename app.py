@@ -3,9 +3,9 @@ import tensorflow as tf
 import numpy as np
 import cv2
 from PIL import Image
+
 from lime import lime_image
 from skimage.segmentation import mark_boundaries
-
 
 # =========================
 # Load trained model
@@ -27,7 +27,7 @@ class_names = [
 # Streamlit UI
 # =========================
 st.title("Explainable AI-Based Alzheimer’s Disease Detection")
-st.write("Upload a Brain MRI image to predict Alzheimer stage and view Grad-CAM explanation.")
+st.write("Upload a Brain MRI image to predict Alzheimer stage and view explanations.")
 
 uploaded_file = st.file_uploader(
     "Choose an MRI image",
@@ -45,12 +45,7 @@ def preprocess_image(img):
     return img_array
 
 # =========================
-def lime_predict(images):
-    images = np.array(images)
-    images = images / 255.0
-    return model.predict(images)
-
-# Grad-CAM function
+# Grad-CAM (Cloud-safe)
 # =========================
 def make_gradcam_heatmap(img_array, model, last_conv_layer_name="top_conv"):
     last_conv_layer = model.get_layer(last_conv_layer_name)
@@ -62,7 +57,7 @@ def make_gradcam_heatmap(img_array, model, last_conv_layer_name="top_conv"):
 
     with tf.GradientTape() as tape:
         conv_outputs, predictions = grad_model(img_array)
-        class_channel = tf.reduce_max(predictions, axis=1)  # ✅ SAFE FIX
+        class_channel = tf.reduce_max(predictions, axis=1)
 
     grads = tape.gradient(class_channel, conv_outputs)
     pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
@@ -74,7 +69,14 @@ def make_gradcam_heatmap(img_array, model, last_conv_layer_name="top_conv"):
     heatmap /= tf.reduce_max(heatmap) + 1e-8
 
     return heatmap.numpy()
+
 # =========================
+# LIME helper functions
+# =========================
+def lime_predict(images):
+    images = np.array(images) / 255.0
+    return model.predict(images)
+
 def generate_lime_explanation(img):
     explainer = lime_image.LimeImageExplainer()
 
@@ -86,7 +88,7 @@ def generate_lime_explanation(img):
         lime_predict,
         top_labels=1,
         hide_color=0,
-        num_samples=1000
+        num_samples=500
     )
 
     temp, mask = explanation.get_image_and_mask(
@@ -96,9 +98,10 @@ def generate_lime_explanation(img):
         hide_rest=False
     )
 
-    lime_image_result = mark_boundaries(temp / 255.0, mask)
-    return lime_image_result
+    lime_result = mark_boundaries(temp / 255.0, mask)
+    return lime_result
 
+# =========================
 # Main logic
 # =========================
 if uploaded_file is not None:
@@ -117,6 +120,8 @@ if uploaded_file is not None:
     st.write("**Alzheimer Stage:**", predicted_class)
     st.write("**Confidence Score:**", round(confidence, 2))
 
+    # -------- Grad-CAM --------
+    st.subheader("Grad-CAM Visualization")
     heatmap = make_gradcam_heatmap(processed_img, model)
 
     heatmap = cv2.resize(heatmap, (224, 224))
@@ -130,12 +135,9 @@ if uploaded_file is not None:
     superimposed_img = heatmap * 0.4 + img_array
     superimposed_img = np.uint8(superimposed_img / np.max(superimposed_img) * 255)
 
-    st.subheader("Grad-CAM Visualization")
     st.image(superimposed_img, use_column_width=True)
+
+    # -------- LIME --------
     st.subheader("LIME Explanation")
-lime_result = generate_lime_explanation(img)
-st.image(lime_result, use_column_width=True)
-
-
-
-
+    lime_result = generate_lime_explanation(img)
+    st.image(lime_result, use_column_width=True)
