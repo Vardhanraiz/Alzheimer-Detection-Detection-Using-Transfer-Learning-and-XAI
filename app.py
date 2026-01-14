@@ -121,7 +121,7 @@ if uploaded_file is not None:
     st.write("**Confidence Score:**", round(confidence, 2))
     st.write("### Class Probabilities")
     for i, cls in enumerate(class_names):
-    st.write(f"{cls}: {preds[0][i]:.2f}")
+        st.write(f"{cls}: {preds[0][i]:.2f}")
 
 
     # -------- Grad-CAM --------
@@ -145,5 +145,6 @@ if uploaded_file is not None:
     st.subheader("LIME Explanation")
     lime_result = generate_lime_explanation(img)
     st.image(lime_result, use_column_width=True)
+
 
 
