@@ -76,6 +76,7 @@ st.info(
 uploaded_file = st.file_uploader(
     "Drag and drop MRI image here or click to browse",
     type=["jpg", "png", "jpeg"]
+     with st.spinner("🧠 Analyzing MRI scan... Please wait"):
 )
 
 analyze_clicked = st.button("🔍 Analyze MRI", use_container_width=True)
@@ -148,10 +149,20 @@ def generate_lime_explanation(img):
     return lime_result
 
 # ======================================================
+
 # MAIN LOGIC
 # ======================================================
 if uploaded_file is not None and analyze_clicked:
     img = Image.open(uploaded_file)
+
+     if not is_likely_mri(img):
+        st.error(
+            "❌ The uploaded image does not appear to be a brain MRI.\n\n"
+            "Please upload a valid axial brain MRI image."
+        )
+        st.stop()
+
+    
 
     st.markdown("## 2️⃣ MRI Preview")
     st.image(img, use_column_width=True)
@@ -220,4 +231,5 @@ st.markdown("---")
 st.caption(
     "© 2026 | Explainable AI for Alzheimer’s Disease | Academic Project"
 )
+
 
