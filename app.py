@@ -189,14 +189,15 @@ if uploaded_file is not None and analyze_clicked:
 
         heatmap = cv2.resize(heatmap, (224, 224))
         heatmap = np.uint8(255 * heatmap)
-        heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
+        heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_TURBO)
         heatmap = cv2.cvtColor(heatmap, cv2.COLOR_BGR2RGB)
-
+        # Prepare original image
         img_rgb = img.convert("RGB").resize((224, 224))
-        img_array = np.array(img_rgb)
+        img_array = np.array(img_rgb).astype("float32")
+         # Stronger overlay
+        superimposed_img = heatmap * 0.7 + img_array * 0.6
+        superimposed_img = np.clip(superimposed_img, 0, 255).astype("uint8")
 
-        superimposed_img = heatmap * 0.4 + img_array
-        superimposed_img = np.uint8(superimposed_img / np.max(superimposed_img) * 255)
 
         st.image(
             superimposed_img,
@@ -219,3 +220,4 @@ st.markdown("---")
 st.caption(
     "© 2026 | Explainable AI for Alzheimer’s Disease | Academic Project"
 )
+
