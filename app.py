@@ -7,9 +7,40 @@ from PIL import Image
 from lime import lime_image
 from skimage.segmentation import mark_boundaries
 
-# =========================
-# Load trained model
-# =========================
+# ======================================================
+# PAGE CONFIG (Professional Layout)
+# ======================================================
+st.set_page_config(
+    page_title="Alzheimer MRI Analysis",
+    page_icon="🧠",
+    layout="wide"
+)
+
+# ======================================================
+# SIDEBAR (Professional Context & Trust)
+# ======================================================
+with st.sidebar:
+    st.markdown("## 🧠 Alzheimer MRI Analyzer")
+    st.markdown(
+        """
+        **Purpose**  
+        Academic AI system for analyzing brain MRI scans  
+        
+        **Approach**  
+        Transfer Learning + Explainable AI (XAI)  
+        
+        **Explainability**  
+        Grad-CAM and LIME visualizations  
+        
+        **Disclaimer**  
+        This tool is for academic and research use only.  
+        Not intended for clinical diagnosis.
+        """
+    )
+
+# ======================================================
+# LOAD MODEL
+# ======================================================
 @st.cache_resource
 def load_model():
     return tf.keras.models.load_model("alzheimer_model.h5")
@@ -23,20 +54,35 @@ class_names = [
     "Moderate Demented"
 ]
 
-# =========================
-# Streamlit UI
-# =========================
+# ======================================================
+# MAIN TITLE
+# ======================================================
 st.title("Explainable AI-Based Alzheimer’s Disease Detection")
-st.write("Upload a Brain MRI image to predict Alzheimer stage and view explanations.")
+st.write(
+    "This application analyzes brain MRI images using deep learning "
+    "and provides visual explanations to support transparency."
+)
+
+# ======================================================
+# UPLOAD SECTION (UX IMPROVED)
+# ======================================================
+st.markdown("## 1️⃣ Upload Brain MRI")
+
+st.info(
+    "📌 Upload a **single axial brain MRI image** (JPG/PNG).\n\n"
+    "For best results, use a clear and centered MRI slice."
+)
 
 uploaded_file = st.file_uploader(
-    "Choose an MRI image",
+    "Drag and drop MRI image here or click to browse",
     type=["jpg", "png", "jpeg"]
 )
 
-# =========================
-# Image preprocessing
-# =========================
+analyze_clicked = st.button("🔍 Analyze MRI", use_container_width=True)
+
+# ======================================================
+# IMAGE PREPROCESSING
+# ======================================================
 def preprocess_image(img):
     img = img.convert("RGB")
     img = img.resize((224, 224))
@@ -44,9 +90,9 @@ def preprocess_image(img):
     img_array = np.expand_dims(img_array, axis=0)
     return img_array
 
-# =========================
-# Grad-CAM (SAFE)
-# =========================
+# ======================================================
+# GRAD-CAM (STABLE)
+# ======================================================
 def make_gradcam_heatmap(img_array, model, last_conv_layer_name="top_conv"):
     last_conv_layer = model.get_layer(last_conv_layer_name)
 
@@ -70,9 +116,9 @@ def make_gradcam_heatmap(img_array, model, last_conv_layer_name="top_conv"):
 
     return heatmap.numpy()
 
-# =========================
-# LIME (SIMPLE & STABLE)
-# =========================
+# ======================================================
+# LIME (SIMPLE & STABLE – YELLOW)
+# ======================================================
 def lime_predict(images):
     images = np.array(images) / 255.0
     return model.predict(images)
@@ -93,7 +139,7 @@ def generate_lime_explanation(img):
 
     temp, mask = explanation.get_image_and_mask(
         explanation.top_labels[0],
-        positive_only=True,   # ✔ yellow explanation (stable)
+        positive_only=True,   # stable yellow explanation
         num_features=5,
         hide_rest=False
     )
@@ -101,13 +147,13 @@ def generate_lime_explanation(img):
     lime_result = mark_boundaries(temp / 255.0, mask)
     return lime_result
 
-# =========================
-# Main logic
-# =========================
-if uploaded_file is not None:
+# ======================================================
+# MAIN LOGIC
+# ======================================================
+if uploaded_file is not None and analyze_clicked:
     img = Image.open(uploaded_file)
 
-    st.subheader("Uploaded MRI Image")
+    st.markdown("## 2️⃣ MRI Preview")
     st.image(img, use_column_width=True)
 
     processed_img = preprocess_image(img)
@@ -116,32 +162,60 @@ if uploaded_file is not None:
     predicted_class = class_names[np.argmax(preds)]
     confidence = float(np.max(preds))
 
-    st.subheader("Prediction Result")
-    st.write("**Alzheimer Stage:**", predicted_class)
-    st.write("**Confidence Score:**", round(confidence, 2))
+    # ---------------- Prediction Summary ----------------
+    st.markdown("## 🧾 Prediction Summary")
 
-    st.write("### Class Probabilities")
-    for i, cls in enumerate(class_names):
-        st.write(f"{cls}: {preds[0][i]:.2f}")
+    col1, col2 = st.columns(2)
 
-    # -------- Grad-CAM --------
-    st.subheader("Grad-CAM Visualization")
-    heatmap = make_gradcam_heatmap(processed_img, model)
+    with col1:
+        st.metric("Predicted Alzheimer Stage", predicted_class)
 
-    heatmap = cv2.resize(heatmap, (224, 224))
-    heatmap = np.uint8(255 * heatmap)
-    heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
-    heatmap = cv2.cvtColor(heatmap, cv2.COLOR_BGR2RGB)
+    with col2:
+        st.metric("Confidence Score", f"{confidence:.2f}")
 
-    img_rgb = img.convert("RGB").resize((224, 224))
-    img_array = np.array(img_rgb)
+    # ---------------- Probabilities (Expandable) ----------------
+    with st.expander("📊 View Class Probabilities"):
+        for i, cls in enumerate(class_names):
+            st.progress(float(preds[0][i]))
+            st.write(f"{cls}: {preds[0][i]:.2f}")
 
-    superimposed_img = heatmap * 0.4 + img_array
-    superimposed_img = np.uint8(superimposed_img / np.max(superimposed_img) * 255)
+    # ---------------- Explainability Tabs ----------------
+    st.markdown("## 🔍 Explainable AI Visualizations")
 
-    st.image(superimposed_img, use_column_width=True)
+    tab1, tab2 = st.tabs(["Grad-CAM", "LIME"])
 
-    # -------- LIME --------
-    st.subheader("LIME Explanation")
-    lime_result = generate_lime_explanation(img)
-    st.image(lime_result, use_column_width=True)
+    with tab1:
+        heatmap = make_gradcam_heatmap(processed_img, model)
+
+        heatmap = cv2.resize(heatmap, (224, 224))
+        heatmap = np.uint8(255 * heatmap)
+        heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
+        heatmap = cv2.cvtColor(heatmap, cv2.COLOR_BGR2RGB)
+
+        img_rgb = img.convert("RGB").resize((224, 224))
+        img_array = np.array(img_rgb)
+
+        superimposed_img = heatmap * 0.4 + img_array
+        superimposed_img = np.uint8(superimposed_img / np.max(superimposed_img) * 255)
+
+        st.image(
+            superimposed_img,
+            caption="Grad-CAM highlights regions influencing prediction",
+            use_column_width=True
+        )
+
+    with tab2:
+        lime_result = generate_lime_explanation(img)
+        st.image(
+            lime_result,
+            caption="LIME shows locally influential regions (yellow)",
+            use_column_width=True
+        )
+
+# ======================================================
+# FOOTER
+# ======================================================
+st.markdown("---")
+st.caption(
+    "© 2026 | Explainable AI for Alzheimer’s Disease | Academic Project"
+)
