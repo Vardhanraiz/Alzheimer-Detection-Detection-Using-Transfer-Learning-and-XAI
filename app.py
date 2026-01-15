@@ -228,8 +228,22 @@ if uploaded_file is not None and analyze_clicked:
 # FOOTER
 # ======================================================
 st.markdown("---")
-st.caption(
-    "© 2026 | Explainable AI for Alzheimer’s Disease | Academic Project"
+st.markdown("### 📊 Dataset Information")
+
+st.markdown(
+    """
+    **Dataset:** Alzheimer MRI (4 Classes)  
+    **Source:** Public medical imaging dataset  
+    **Classes:**  
+    - Non-Demented  
+    - Very Mild Demented  
+    - Mild Demented  
+    - Moderate Demented  
+
+    **Usage:**  
+    Subset used for training and evaluation due to computational limits.
+    """
 )
+
 
 
