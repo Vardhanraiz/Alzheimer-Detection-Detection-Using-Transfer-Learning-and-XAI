@@ -416,7 +416,8 @@ def show_login():
 # ======================================================
 @st.cache_resource
 def load_model():
-    return tf.keras.models.load_model("alzheimer_model.h5")
+    return tf.keras.models.load_model("phase1_best.keras
+")
 
 # ======================================================
 # CLASSES & DESCRIPTIONS
