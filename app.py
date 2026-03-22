@@ -296,16 +296,51 @@ def inject_global_css():
     }
 
     /* ── Input styling ── */
-    input[type="text"], input[type="password"] {
-        background: rgba(56,189,248,0.06) !important;
-        border: 1px solid var(--border) !important;
+    input[type="text"],
+    input[type="password"],
+    [data-testid="stTextInput"] input,
+    .stTextInput input,
+    div[data-baseweb="input"] input,
+    div[data-baseweb="base-input"] input {
+        background: rgba(255,255,255,0.08) !important;
+        border: 1px solid rgba(56,189,248,0.3) !important;
         border-radius: 10px !important;
-        color: var(--text-main) !important;
+        color: #f1f5f9 !important;
         font-family: 'DM Sans', sans-serif !important;
         font-size: 0.95rem !important;
-        padding: 10px 14px !important;
+        caret-color: #38bdf8 !important;
     }
-    input:focus { border-color: var(--accent) !important; box-shadow: 0 0 0 3px rgba(56,189,248,0.15) !important; }
+
+    /* Input wrapper background */
+    div[data-baseweb="input"],
+    div[data-baseweb="base-input"] {
+        background: rgba(255,255,255,0.07) !important;
+        border: 1px solid rgba(56,189,248,0.25) !important;
+        border-radius: 10px !important;
+    }
+
+    /* Remove inner border/outline duplication */
+    div[data-baseweb="input"]:focus-within,
+    div[data-baseweb="base-input"]:focus-within {
+        border-color: #38bdf8 !important;
+        box-shadow: 0 0 0 3px rgba(56,189,248,0.18) !important;
+    }
+
+    /* Placeholder text */
+    input::placeholder,
+    [data-testid="stTextInput"] input::placeholder {
+        color: #64748b !important;
+        opacity: 1 !important;
+    }
+
+    /* Make sure text stays light after autofill */
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus {
+        -webkit-text-fill-color: #f1f5f9 !important;
+        -webkit-box-shadow: 0 0 0px 1000px rgba(15,28,55,0.95) inset !important;
+        caret-color: #38bdf8 !important;
+    }
 
     /* ── Status Pill ── */
     .status-pill {
@@ -416,7 +451,8 @@ def show_login():
 # ======================================================
 @st.cache_resource
 def load_model():
-    return tf.keras.models.load_model("phase1_best.keras")
+    return tf.keras.models.load_model("phase1_best.keras
+")
 
 # ======================================================
 # CLASSES & DESCRIPTIONS
